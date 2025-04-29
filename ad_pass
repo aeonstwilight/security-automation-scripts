@@ -1,3 +1,0 @@
-Get-ADUser -Filter * -Properties DisplayName, msDS-UserPasswordExpiryTimeComputed | 
-Select-Object DisplayName, @{Name="ExpiryDate";Expression={[datetime]::FromFileTime($_.msDS-UserPasswordExpiryTimeComputed)}} | 
-Export-Csv -Path "C:\path\to\output.csv" -NoTypeInformation
