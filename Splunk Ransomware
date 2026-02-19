@@ -1,0 +1,48 @@
+index=main sourcetype=XmlWinEventLog:Microsoft-Windows-Sysmon/Operational
+(
+    EventID=1
+    (NewProcessName="*\\powershell.exe" OR NewProcessName="*\\cmd.exe" OR NewProcessName="*\\wmic.exe" OR NewProcessName="*\\vssadmin.exe" OR NewProcessName="*\\cscript.exe" OR NewProcessName="*\\rundll32.exe")
+)
+OR
+(
+    EventID=4663 OR EventID=11
+    ObjectType="File"
+    (AccessMask="0x2" OR AccessMask="0x6" OR AccessMask="0x7")
+)
+OR
+(
+    EventID IN (7045,4697,4698,4702)
+)
+OR
+(
+    EventID=1
+    (NewProcessName="*\\vssadmin.exe" OR NewProcessName="*\\wmic.exe")
+    CommandLine="*delete shadows*"
+)
+| eval MITRE_ATTCK_CASE = case(
+    match(NewProcessName, ".*powershell.*"), "T1059.001 - Command and Scripting Interpreter: PowerShell",
+    match(NewProcessName, ".*wmic.*"), "T1047 - Windows Management Instrumentation",
+    match(NewProcessName, ".*vssadmin.*"), "T1490 - Inhibit System Recovery",
+    match(NewProcessName, ".*rundll32.*"), "T1218 - Signed Binary Proxy Execution",
+    match(ServiceName, ".*"), "T1543 - Create or Modify System Process",
+    match(Object_Name, ".*"), "T1486 - Data Encrypted for Impact",
+    match(CommandLine, ".*-enc.*|.*-nop.*|.*Invoke-Expression.*"), "T1059.001 - Command and Scripting Interpreter: PowerShell",
+    match(CommandLine, ".*delete shadows.*"), "T1490 - Inhibit System Recovery"
+)
+| eval ransomware_file_flag = if(like(Object_Name, "%.locked") OR like(Object_Name, "%.crypt") OR like(Object_Name, "%.enc"), 1, 0)
+| eval suspicious_powershell_flag = if(like(NewProcessName, "%powershell%") AND match(CommandLine, ".*-enc.*|.*-nop.*|.*Invoke-Expression.*"), 1, 0)
+| eval shadowcopy_delete_flag = if(like(NewProcessName, "%vssadmin%") AND match(CommandLine, ".*delete shadows.*"), 1, 0)
+| eval persistence_flag = if(EventID IN (7045,4697,4698,4702), 1, 0)
+
+
+| eval parent_child_flag = if(
+    (ParentProcessName="*\\winword.exe" AND like(NewProcessName,"%powershell%")) OR
+    (ParentProcessName="*\\powershell.exe" AND like(NewProcessName,"%cmd%")) OR
+    (ParentProcessName="*\\cmd.exe" AND like(NewProcessName,"%ransom%")), 1, 0
+)
+| stats count, dc(Object_Name) as files_modified, values(Object_Name) as modified_files, values(NewProcessName) as processes, values(ParentProcessName) as parent_processes, values(ServiceName) as services, values(CommandLine) as commands, sum(ransomware_file_flag) as ransomware_file_flag, sum(suspicious_powershell_flag) as suspicious_powershell_flag, sum(shadowcopy_delete_flag) as shadowcopy_delete_flag, sum(persistence_flag) as persistence_flag, sum(parent_child_flag) as parent_child_flag by host, Account_Name
+| eval anomaly_score = (files_modified / 50) + if(count>10,1,0)
+| eval total_risk_score = anomaly_score + ransomware_file_flag + suspicious_powershell_flag + shadowcopy_delete_flag + persistence_flag + parent_child_flag
+| where total_risk_score > 2
+| table _time, host, Account_Name, processes, parent_processes, services, modified_files, commands, files_modified, ransomware_file_flag, suspicious_powershell_flag, shadowcopy_delete_flag, persistence_flag, parent_child_flag, MITRE_ATTCK_CASE, anomaly_score, total_risk_score
+| sort -total_risk_score
