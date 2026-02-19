@@ -1,0 +1,45 @@
+index=main sourcetype=linux_audit OR sourcetype=syslog OR sourcetype=processes
+    (
+      
+        process_name IN ("python","perl","bash")
+        AND NOT cmdline IN ("/usr/bin/apt","/usr/bin/yum","/usr/bin/ssh")
+    )
+    OR
+    (
+        
+        event_type IN ("open","write","unlink")
+        file_path IN ("/home/*","/var/www/*","/etc/*")
+    )
+    OR
+    (
+        
+        event_type IN ("systemd","cron")
+    )
+    OR
+    (
+        
+        file_path IN ("/var/backups/*") AND event_type="unlink"
+    )
+    | eval MITRE_ATTCK_CASE = case(
+        like(file_path, "%.locked") OR like(file_path, "%.crypt") OR like(file_path, "%.enc"), "T1486 - Data Encrypted for Impact",
+        process_name IN ("python","perl","bash"), "T1059 - Command and Scripting Interpreter",
+        event_type IN ("systemd","cron"), "T1547 - Persistence",
+        file_path IN ("/var/backups/*") AND event_type="unlink", "T1490 - Inhibit System Recovery"
+    )
+    | eval ransomware_file_flag = if(like(file_path, "%.locked") OR like(file_path, "%.crypt") OR like(file_path, "%.enc"), 1, 0)
+    | eval suspicious_process_flag = if(process_name IN ("python","perl","bash") AND cmdline NOT IN ("/usr/bin/apt","/usr/bin/yum","/usr/bin/ssh"), 1, 0)
+    | eval persistence_flag = if(event_type IN ("systemd","cron"), 1, 0)
+   
+    | eval parent_child_flag = if(
+        (parent_process_name="bash" AND process_name="python") OR
+        (parent_process_name="python" AND process_name="perl") OR
+        (parent_process_name="perl" AND process_name="bash"), 1, 0
+    )
+  
+    | eventstats avg(count) as avg_events stdev(count) as stdev_events by host, user
+    | eval anomaly_score = if(count > avg_events + 3*stdev_events, 1, 0)
+    | eval total_risk_score = anomaly_score + ransomware_file_flag + suspicious_process_flag + persistence_flag + parent_child_flag
+    | stats count, dc(file_path) as files_modified, values(file_path) as modified_files, values(process_name) as processes, values(parent_process_name) as parent_processes, values(event_type) as event_types, values(cmdline) as commands, sum(ransomware_file_flag) as ransomware_file_flag, sum(suspicious_process_flag) as suspicious_process_flag, sum(persistence_flag) as persistence_flag, sum(parent_child_flag) as parent_child_flag, sum(anomaly_score) as anomaly_score, sum(total_risk_score) as total_risk_score by host, user
+    | where total_risk_score > 2
+    | table _time, host, user, processes, parent_processes, modified_files, files_modified, commands, event_types, ransomware_file_flag, suspicious_process_flag, persistence_flag, parent_child_flag, anomaly_score, total_risk_score, MITRE_ATTCK_CASE
+    | sort -total_risk_score
