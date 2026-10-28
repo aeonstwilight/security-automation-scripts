@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | ID | AWS-001 |
-| ATT&CK | [T1562.008](https://attack.mitre.org/techniques/T1562/008/) Impair Defenses: Disable or Modify Cloud Logs |
+| ATT&CK | [T1685.002](https://attack.mitre.org/techniques/T1685/002/) Disable or Modify Tools: Disable or Modify Cloud Log |
 | Data needed | CloudTrail management events, all accounts and regions (`sourcetype=aws:cloudtrail` or the `AWSCloudTrail` table) |
 | Severity | High |
 | Status | Experimental. Logic reviewed; not yet validated against production data. |
