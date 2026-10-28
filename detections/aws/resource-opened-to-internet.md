@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | ID | AWS-005 |
-| ATT&CK | [T1562.007](https://attack.mitre.org/techniques/T1562/007/) Impair Defenses: Disable or Modify Cloud Firewall |
+| ATT&CK | [T1686.001](https://attack.mitre.org/techniques/T1686/001/) Disable or Modify System Firewall: Cloud Firewall |
 | Data needed | CloudTrail management events, all accounts and regions (`sourcetype=aws:cloudtrail` or the `AWSCloudTrail` table) |
 | Severity | Medium |
 | Status | Experimental. Logic reviewed; not yet validated against production data. |

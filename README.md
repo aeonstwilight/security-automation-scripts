@@ -43,11 +43,11 @@ Every detection here is marked **Experimental**: the logic has been reviewed, bu
 
 | ID | Detection | ATT&CK | Severity |
 |----|-----------|--------|----------|
-| AWS-001 | [CloudTrail, GuardDuty, Config or flow logs disabled](detections/aws/logging-disabled.md) | [T1562.008](https://attack.mitre.org/techniques/T1562/008/) Impair Defenses: Disable or Modify Cloud Logs | High |
+| AWS-001 | [CloudTrail, GuardDuty, Config or flow logs disabled](detections/aws/logging-disabled.md) | [T1685.002](https://attack.mitre.org/techniques/T1685/002/) Disable or Modify Tools: Disable or Modify Cloud Log | High |
 | AWS-002 | [Root user activity](detections/aws/root-user-activity.md) | [T1078.004](https://attack.mitre.org/techniques/T1078/004/) Valid Accounts: Cloud Accounts | High |
 | AWS-003 | [IAM user console login without MFA](detections/aws/console-login-without-mfa.md) | [T1078.004](https://attack.mitre.org/techniques/T1078/004/) Valid Accounts: Cloud Accounts | Medium |
 | AWS-004 | [Access key or console password created for another user](detections/aws/credentials-created-for-another-user.md) | [T1098.001](https://attack.mitre.org/techniques/T1098/001/) Account Manipulation: Additional Cloud Credentials | High |
-| AWS-005 | [Security group opened to the internet or S3 public access block removed](detections/aws/resource-opened-to-internet.md) | [T1562.007](https://attack.mitre.org/techniques/T1562/007/) Impair Defenses: Disable or Modify Cloud Firewall | Medium |
+| AWS-005 | [Security group opened to the internet or S3 public access block removed](detections/aws/resource-opened-to-internet.md) | [T1686.001](https://attack.mitre.org/techniques/T1686/001/) Disable or Modify System Firewall: Cloud Firewall | Medium |
 | AWS-006 | [IAM administrator-level policy granted](detections/aws/admin-policy-granted.md) | [T1098.003](https://attack.mitre.org/techniques/T1098/003/) Account Manipulation: Additional Cloud Roles | High |
 | AWS-007 | [KMS key disabled, scheduled for deletion or key material deleted](detections/aws/kms-key-disabled-or-deleted.md) | [T1485](https://attack.mitre.org/techniques/T1485/) Data Destruction | Medium |
 | AWS-008 | [EBS snapshot, AMI or RDS snapshot shared outside the account](detections/aws/snapshot-shared-outside-account.md) | [T1537](https://attack.mitre.org/techniques/T1537/) Transfer Data to Cloud Account | Medium |
